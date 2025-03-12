@@ -1,0 +1,60 @@
+/* Add these styles to your main CSS file */
+
+/* Main layout container */
+.dashboard-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  /* Sidebar styles */
+  .sidebar-wrapper {
+    width: 280px;
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 100;
+    transition: all 0.3s;
+  }
+  
+  /* Main content area */
+  .main-content {
+    margin-left: 280px; /* Match sidebar width */
+    width: calc(100% - 280px);
+    transition: all 0.3s;
+    margin-top: 60px;
+    
+  }
+  
+  /* Adjust card width in main content */
+  .main-content .card.w-70 {
+    width: 100% !important; /* Override the w-70 class */
+    max-width: 100%;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 992px) {
+    .sidebar-wrapper {
+      left: -280px; /* Hide sidebar on mobile */
+    }
+    
+    .sidebar-wrapper.show {
+      left: 0; /* Show sidebar when toggled */
+    }
+    
+    .main-content {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+  
+  /* When sidebar is toggled closed */
+  body.sidebar-collapsed .sidebar-wrapper {
+    left: -280px;
+  }
+  
+  body.sidebar-collapsed .main-content {
+    margin-left: 0;
+    width: 100%;
+  }

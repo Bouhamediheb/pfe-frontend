@@ -1,0 +1,22 @@
+<div [class]="getNotificationClass()" [style.display]="visible ? 'block' : 'none'"
+         [class.rounded-3]="rounded" [class.notification-mini]="size === 'mini'"
+         [style.position]="'fixed'" [style.z-index]="'9999'"
+         [style.top]="getPositionStyle().top" [style.bottom]="getPositionStyle().bottom"
+         [style.left]="getPositionStyle().left" [style.right]="getPositionStyle().right">
+      <div class="notification-inner">
+        <div class="notification-icon" *ngIf="icon">
+          <i [class]="icon"></i>
+        </div>
+        <div class="notification-img" *ngIf="img">
+          <img [src]="img" alt="notification image">
+        </div>
+        <div class="notification-content">
+          <span class="notification-title" *ngIf="title">{{ title }}</span>
+          <p class="notification-message">{{ msg }}</p>
+        </div>
+        <div class="notification-close" (click)="close()">
+          <i class="bi bi-x"></i>
+        </div>
+        <div class="notification-delay-indicator" *ngIf="delayIndicator"></div>
+      </div>
+    </div>
