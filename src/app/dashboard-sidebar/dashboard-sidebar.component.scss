@@ -1,0 +1,15 @@
+.sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  
+  .sidebar-nav {
+    flex: 1;
+    overflow: hidden; // This is important for SimpleBar
+  }
+  
+  // Make sure any nested ul, li items don't overflow
+  .metismenu ul {
+    overflow: hidden;
+  }
