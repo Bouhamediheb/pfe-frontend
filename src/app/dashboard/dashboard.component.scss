@@ -1,60 +1,94 @@
-/* Add these styles to your main CSS file */
-
 /* Main layout container */
 .dashboard-container {
-    display: flex;
-    width: 100%;
-    min-height: 100vh;
-  }
-  
-  /* Sidebar styles */
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Sidebar styles */
+.sidebar-wrapper {
+  width: 280px;
+  height: 100vh; /* Ensure it takes full height */
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s;
+  background: #ffffff; /* Adjust as needed */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent overflow issues */
+}
+
+/* Sidebar scrollable content */
+.sidebar-nav {
+  flex-grow: 1; /* Allow content to expand */
+  max-height: calc(100vh - 60px); /* Adjust height considering top elements */
+  overflow-y: auto; /* Enable scrolling */
+  padding-bottom: 10px;
+}
+
+/* Ensure SimpleBar works properly */
+.sidebar-nav[data-simplebar] {
+  max-height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+/* Fix for nested menus */
+.metismenu ul {
+  overflow: visible;
+}
+
+/* Sidebar close button */
+.sidebar-close {
+  cursor: pointer;
+}
+
+/* Main content area */
+.main-content {
+  margin-left: 280px; /* Match sidebar width */
+  width: calc(100% - 280px);
+  transition: all 0.3s;
+  margin-top: 60px;
+  overflow-y: auto; /* Ensure the main content scrolls separately */
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
   .sidebar-wrapper {
-    width: 280px;
-    min-height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    z-index: 100;
-    transition: all 0.3s;
-  }
-  
-  /* Main content area */
-  .main-content {
-    margin-left: 280px; /* Match sidebar width */
-    width: calc(100% - 280px);
-    transition: all 0.3s;
-    margin-top: 60px;
-    
-  }
-  
-  /* Adjust card width in main content */
-  .main-content .card.w-70 {
-    width: 100% !important; /* Override the w-70 class */
-    max-width: 100%;
-  }
-  
-  /* Responsive adjustments */
-  @media (max-width: 992px) {
-    .sidebar-wrapper {
       left: -280px; /* Hide sidebar on mobile */
-    }
-    
-    .sidebar-wrapper.show {
+  }
+
+  .sidebar-wrapper.show {
       left: 0; /* Show sidebar when toggled */
-    }
-    
-    .main-content {
+  }
+
+  .main-content {
       margin-left: 0;
       width: 100%;
-    }
   }
-  
-  /* When sidebar is toggled closed */
-  body.sidebar-collapsed .sidebar-wrapper {
-    left: -280px;
-  }
-  
-  body.sidebar-collapsed .main-content {
-    margin-left: 0;
-    width: 100%;
-  }
+}
+
+/* When sidebar is toggled closed */
+body.sidebar-collapsed .sidebar-wrapper {
+  left: -280px;
+}
+
+body.sidebar-collapsed .main-content {
+  margin-left: 0;
+  width: 100%;
+}
+
+/* Scrollbar customization (optional) */
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}

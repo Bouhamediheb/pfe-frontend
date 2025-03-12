@@ -10,7 +10,7 @@ import { HttpHeaders } from '@angular/common/http';
   providedIn: 'root'
 })
 export class JiraService {
-  private apiUrl = 'https://74b9-197-240-210-65.ngrok-free.app/api/jira'; // Base URL to your Spring Boot backend API
+  private apiUrl = 'http://localhost:8080/api/jira'; // Base URL to your Spring Boot backend API
 
   constructor(private http: HttpClient) { }
 
@@ -18,14 +18,7 @@ export class JiraService {
    * Get all JIRA issues from the backend
    */
   getAllIssues(): Observable<Issue[]> {
-    const headers = new HttpHeaders()
-      .set('Accept', 'application/json')
-      .set('Content-Type', 'application/json');
-      
-    return this.http.get<Issue[]>(
-      'https://74b9-197-240-210-65.ngrok-free.app/api/jira/issues', 
-      { headers }
-    );
+    return this.http.get<Issue[]>(`${this.apiUrl}/issues`);
   }
 
   /**
