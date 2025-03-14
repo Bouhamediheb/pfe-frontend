@@ -1,18 +1,16 @@
-<!-- notification.component.html -->
-<div *ngIf="visible" [class]="getNotificationClass()"
+<div *ngFor="let notification of notifications; let i = index"
+     [class]="getNotificationClass(notification.type) + ' notification-' + notification.id"
      [style.position]="'fixed'" [style.z-index]="'9999'"
-     [style.top]="getPositionStyle().top"
-     [style.left]="getPositionStyle().left"
-     [style.right]="getPositionStyle().right">
+     [ngStyle]="getPositionStyle(notification.position, i)">
   <div class="notification-inner">
-    <div class="notification-icon" *ngIf="icon">
-      <i [class]="icon"></i>
+    <div class="notification-icon" *ngIf="notification.icon">
+      <i [class]="notification.icon"></i>
     </div>
     <div class="notification-content">
-      <span class="notification-title" *ngIf="title">{{ title }}</span>
-      <p class="notification-message">{{ msg }}</p>
+      <span class="notification-title" *ngIf="notification.title">{{ notification.title }}</span>
+      <p class="notification-message">{{ notification.msg }}</p>
     </div>
-    <div class="notification-close" (click)="close()">
+    <div class="notification-close" (click)="close(notification.id)">
       <i class="bi bi-x"></i>
     </div>
   </div>

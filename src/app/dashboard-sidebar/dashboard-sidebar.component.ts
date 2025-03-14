@@ -34,7 +34,6 @@ export class DashboardSidebarComponent implements OnInit, AfterViewInit, OnDestr
         msg: notificationMessage,
         title: 'New Notification',
         delay: 5000,  // Notification disappears after 5 seconds
-        position: 'top right',  // Position of the notification
         type: 'info',  // Notification type (can be 'info', 'success', 'warning', etc.)
       });
     });
@@ -53,11 +52,14 @@ export class DashboardSidebarComponent implements OnInit, AfterViewInit, OnDestr
     }
   }
 
-  showNotification() {
-    this.notificationService.success('This is a success notification!', {
-      icon: 'bi bi-check2-circle',
-      rounded: true
-    });
+  showNotification(): void {
+    console.log('Notification button clicked!');
+    this.notificationService.success(
+      'This is a success notification!',
+      'Success',
+      3000,
+      'top right' // Explicitly set position
+    );
   }
 
   ngOnDestroy(): void {
