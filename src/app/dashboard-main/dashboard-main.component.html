@@ -89,7 +89,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Assignee</label>
-                <select class="form-select" [(ngModel)]="selectedAssignee">
+                <select class="form-select" [(ngModel)]="selectedAssignee" [disabled]="loading">
                     <option value="">All Assignees</option>
                     <option *ngFor="let assignee of getUniqueAssignees()" [value]="assignee">
                         {{ assignee }}
@@ -100,10 +100,9 @@
                 <label class="form-label">Status</label>
                 <select class="form-select" [(ngModel)]="selectedStatus">
                     <option value="">All Statuses</option>
-                    <option value="open">Open</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
+                    <option *ngFor="let status of getUniqueStatuses()" [value]="status">
+                        {{ status }}
+                    </option>
                 </select>
             </div>
             <div class="col-md-2 d-flex align-items-end">
@@ -112,8 +111,7 @@
         </div>
     </div>
 </div>
-
-<!-- Issues table - Update to use actual data -->
+<!-- Issues table -->
 <div class="card rounded-4 w-100">
     <div class="card-body">
         <div *ngIf="loading" class="d-flex justify-content-center">
@@ -141,30 +139,33 @@
                     <tr *ngFor="let issue of paginatedIssues">
                         <td><a href="#" class="fw-bold">{{ issue.key }}</a></td>
                         <td>
-                            <div class="d-flex align-items-center gap-2" *ngIf="issue.assignee">
+                            <div class="d-flex align-items-center gap-2" *ngIf="issue.assignee || issue.assigneeName">
                                 <div
-                                    [class]="'wh-32 rounded-circle ' + getUserAvatarColorClass(issue.assignee.accountId) + ' d-flex align-items-center justify-content-center text-white'">
-                                    {{ getUserInitials(issue.assignee.displayName) }}
+                                    [class]="'wh-32 rounded-circle ' + getUserAvatarColorClass(issue.assignee?.accountId || issue.key) + ' d-flex align-items-center justify-content-center text-white'">
+                                    {{ getUserInitials(issue.assignee?.displayName || issue.assigneeName || 'NA') }}
                                 </div>
-                                <span>{{ issue.assignee.displayName }}</span>
+                                <span>{{ issue.assignee?.displayName || issue.assigneeName }}</span>
                             </div>
-                            <span *ngIf="!issue.assignee">Unassigned</span>
+                            <span *ngIf="!issue.assignee && !issue.assigneeName">Unassigned</span>
                         </td>
                         <td>{{ issue.created | date:'dd MMM yyyy' }}</td>
                         <td>
-                            <span [class]="'badge ' + getPriorityBadgeClass(issue.priority?.name || '')">
-                                {{ issue.priority?.name || 'Unknown' }}
+                            <span [class]="'badge ' + getPriorityBadgeClass(issue.priorityName || '')">
+                                {{ issue.priorityName || 'Unknown' }}
                             </span>
                         </td>
                         <td>{{ issue.summary }}</td>
                         <td>
                             <div class="d-flex gap-2">
-                                <button class="btn btn-sm btn-outline-primary"><span
-                                        class="material-icons-outlined fs-6">edit</span></button>
-                                <button class="btn btn-sm btn-outline-success"><span
-                                        class="material-icons-outlined fs-6">add_comment</span></button>
-                                <button class="btn btn-sm btn-outline-info"><span
-                                        class="material-icons-outlined fs-6">visibility</span></button>
+                                <button class="btn btn-sm btn-outline-primary">
+                                    <span class="material-icons-outlined fs-6">edit</span>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success">
+                                    <span class="material-icons-outlined fs-6">add_comment</span>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info">
+                                    <span class="material-icons-outlined fs-6">visibility</span>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -193,36 +194,3 @@
         </nav>
     </div>
 </div>
-
-<!-- 
-<div class="chart-container" style="height: 300px;">
-    <div class="d-flex justify-content-center align-items-center h-100">
-        <div class="text-center">
-            <div class="pie-chart-placeholder rounded-circle mx-auto mb-3" [style.width.px]="200"
-                [style.height.px]="200" [style.background]="
-    'conic-gradient(' +
-    '#dc3545 0% ' + priorityDistribution.high + '%, ' +
-    '#ffc107 ' + priorityDistribution.high + '% ' + (priorityDistribution.high + priorityDistribution.medium) + '%, ' +
-    '#198754 ' + (priorityDistribution.high + priorityDistribution.medium) + '% 100%)'
-  ">
-            </div>
-
-            <div class="d-flex justify-content-center gap-4">
-                <div class="d-flex align-items-center gap-2">
-                    <div style="width: 12px; height: 12px; background-color: #dc3545; border-radius: 50%;"></div>
-                    <span>High ({{ priorityDistribution.high }}%)</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div style="width: 12px; height: 12px; background-color: #ffc107; border-radius: 50%;"></div>
-                    <span>Medium ({{ priorityDistribution.medium }}%)</span>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <div style="width: 12px; height: 12px; background-color: #198754; border-radius: 50%;"></div>
-                    <span>Low ({{ priorityDistribution.low }}%)</span>
-                </div>
-            </div>
-        </div>
-        
-    </div>
-</div>
-    Update the pie chart to use actual data -->

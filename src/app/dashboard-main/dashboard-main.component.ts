@@ -3,220 +3,160 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { JiraService } from '../services/jira.service';
-import { Issue } from '../models/issue.model';
+import { Ticket } from '../models/Ticket';
+import { Tester } from '../models/Tester';
 
 @Component({
   selector: 'app-dashboard-main',
-  templateUrl: './dashboard-main.component.html',
   standalone: true,
   imports: [CommonModule, FormsModule, HttpClientModule],
-  styleUrl: './dashboard-main.component.scss'
+  templateUrl: './dashboard-main.component.html',
+  styleUrls: ['./dashboard-main.component.scss']
 })
 export class DashboardMainComponent implements OnInit {
-  // Issues data
-  issues: Issue[] = [];
-  filteredIssues: Issue[] = [];
-  
-  // Stats
   totalIssues = 0;
   openIssues = 0;
   resolvedIssues = 0;
-  avgResolutionTime = '0 days';
-  
-  // Filters
+  avgResolutionTime = 'N/A';
+
+  statuses: string[] = [];
+
   startDate: string = '';
   endDate: string = '';
   selectedPriority: string = '';
   selectedAssignee: string = '';
   selectedStatus: string = '';
-  
-  // Pagination
+
+  loading = false;
+  allTickets: Ticket[] = [];
+  filteredIssues: Ticket[] = [];
+  paginatedIssues: Ticket[] = [];
   currentPage = 1;
   pageSize = 10;
-  totalPages = 1;
-  
-  // Loading state
-  loading = true;
-  
-  // Activity log
-  recentActivities: any[] = []; // Would be replaced with actual activity model
-  
-  // Chart data
-  priorityDistribution = {
-    high: 0,
-    medium: 0,
-    low: 0
-  };
+  totalPages = 0;
 
   constructor(private jiraService: JiraService) {}
 
   ngOnInit(): void {
-    this.fetchIssues();
+    this.loadTickets();
+    this.loadStatuses();
   }
 
-  fetchIssues(): void {
+  loadTickets(): void {
     this.loading = true;
-    this.jiraService.getAllIssues().subscribe({
-      next: (data) => {
-        this.issues = data;
-        this.filteredIssues = [...this.issues];
+    this.jiraService.getAllTickets().subscribe({
+      next: (tickets) => {
+        this.allTickets = tickets;
+        console.log('All Tickets:', this.allTickets);
+        console.log('Unique Statuses:', this.getUniqueStatuses());
+        console.log('Unique Assignees:', this.getUniqueAssignees());
         this.calculateStats();
-        this.totalPages = Math.ceil(this.filteredIssues.length / this.pageSize);
+        this.applyFilters();
         this.loading = false;
-        
       },
       error: (err) => {
-        console.error('Error fetching issues:', err);
+        console.error('Error loading tickets:', err);
         this.loading = false;
       }
     });
   }
 
-  calculateStats(): void {
-    // Calculate total issues
-    this.totalIssues = this.issues.length;
-    
-    // Count open and resolved issues
-    // This is a simplified version - adjust based on your actual status fields
-    this.openIssues = this.issues.filter(issue => 
-      issue.priority?.name === 'High' || issue.priority?.name === 'Medium').length;
-    this.resolvedIssues = this.issues.filter(issue => 
-      issue.priority?.name === 'Low').length;
-    
-    // Calculate average resolution time (placeholder)
-    this.avgResolutionTime = '2.4 days';
-    
-    // Calculate priority distribution
-    this.calculatePriorityDistribution();
-  }
-
-  calculatePriorityDistribution(): void {
-    let highCount = 0;
-    let mediumCount = 0;
-    let lowCount = 0;
-    
-    this.issues.forEach(issue => {
-      switch(issue.priority?.name?.toLowerCase()) {
-        case 'high':
-          highCount++;
-          break;
-        case 'medium':
-          mediumCount++;
-          break;
-        case 'low':
-          lowCount++;
-          break;
-      }
+  loadStatuses(): void {
+    this.jiraService.getStatuses().subscribe({
+        next: (statuses) => this.statuses = statuses,
+        error: (err) => console.error('Error loading statuses:', err)
     });
-    
-    const total = highCount + mediumCount + lowCount;
-    
-    this.priorityDistribution = {
-      high: total > 0 ? Math.round((highCount / total) * 100) : 0,
-      medium: total > 0 ? Math.round((mediumCount / total) * 100) : 0,
-      low: total > 0 ? Math.round((lowCount / total) * 100) : 0
-    };
+}
+
+  calculateStats(): void {
+    this.totalIssues = this.allTickets.length;
+    this.openIssues = this.allTickets.filter(t => t.status.toLowerCase() === 'open' || t.status.toLowerCase() === 'to do').length;
+    this.resolvedIssues = this.allTickets.filter(t => t.status.toLowerCase() === 'resolved' || t.status.toLowerCase() === 'done').length;
+    this.avgResolutionTime = 'N/A';
   }
 
   applyFilters(): void {
-    this.filteredIssues = this.issues.filter(issue => {
-      let matchesPriority = true;
-      let matchesAssignee = true;
-      let matchesStatus = true;
-      let matchesDateRange = true;
-      
-      // Filter by priority
-      if (this.selectedPriority && issue.priority) {
-        matchesPriority = issue.priority.name.toLowerCase() === this.selectedPriority.toLowerCase();
-      }
-      
-      // Filter by assignee
-      if (this.selectedAssignee && issue.assignee) {
-        matchesAssignee = issue.assignee.displayName.toLowerCase().includes(this.selectedAssignee.toLowerCase());
-      }
-      
-      // Filter by status (placeholder - adjust based on your actual status field)
-      if (this.selectedStatus) {
-        // This is just an example - replace with your actual status field
-        const status = issue.priority?.name === 'High' ? 'open' : 
-                      issue.priority?.name === 'Medium' ? 'in-progress' : 'resolved';
-        matchesStatus = status === this.selectedStatus;
-      }
-      
-      // Filter by date range
-      if (this.startDate && this.endDate && issue.created) {
-        const createdDate = new Date(issue.created);
-        const start = new Date(this.startDate);
-        const end = new Date(this.endDate);
-        
-        matchesDateRange = createdDate >= start && createdDate <= end;
-      }
-      
-      return matchesPriority && matchesAssignee && matchesStatus && matchesDateRange;
-    });
-    
-    // Reset pagination
-    this.currentPage = 1;
-    this.totalPages = Math.ceil(this.filteredIssues.length / this.pageSize);
-  }
+    let filtered = [...this.allTickets];
 
-  resetFilters(): void {
-    this.startDate = '';
-    this.endDate = '';
-    this.selectedPriority = '';
-    this.selectedAssignee = '';
-    this.selectedStatus = '';
-    
-    this.filteredIssues = [...this.issues];
-    this.currentPage = 1;
-    this.totalPages = Math.ceil(this.filteredIssues.length / this.pageSize);
-  }
-
-  // Pagination methods
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
+    if (this.startDate) {
+        filtered = filtered.filter(t => new Date(t.created) >= new Date(this.startDate));
     }
+    if (this.endDate) {
+        filtered = filtered.filter(t => new Date(t.created) <= new Date(this.endDate));
+    }
+    if (this.selectedPriority) {
+        filtered = filtered.filter(t => t.priorityName?.toLowerCase() === this.selectedPriority.toLowerCase());
+    }
+    if (this.selectedAssignee) {
+        filtered = filtered.filter(t => 
+            (t.assignee?.displayName || t.assigneeName || '') === this.selectedAssignee
+        );
+    }
+    if (this.selectedStatus) {
+        filtered = filtered.filter(t => t.status.toLowerCase() === this.selectedStatus.toLowerCase());
+    }
+
+    this.filteredIssues = filtered;
+    this.totalPages = Math.ceil(this.filteredIssues.length / this.pageSize);
+    this.updatePaginatedIssues();
+}
+
+  updatePaginatedIssues(): void {
+    const start = (this.currentPage - 1) * this.pageSize;
+    const end = start + this.pageSize;
+    this.paginatedIssues = this.filteredIssues.slice(start, end);
   }
 
-  get paginatedIssues(): Issue[] {
-    const startIndex = (this.currentPage - 1) * this.pageSize;
-    return this.filteredIssues.slice(startIndex, startIndex + this.pageSize);
-  }
-
-  // Added method to replace Math.min in template
-  getMaxEntries(): number {
-    return Math.min(this.currentPage * this.pageSize, this.filteredIssues.length);
-  }
-
-  // Added method to generate array for pagination
-  getPagesArray(): number[] {
-    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
-  }
-
-  // Added method to get unique assignees for dropdown
   getUniqueAssignees(): string[] {
-    const assignees = new Set<string>();
-    
-    this.issues.forEach(issue => {
-      if (issue.assignee && issue.assignee.displayName) {
-        assignees.add(issue.assignee.displayName);
-      }
-    });
-    
-    return Array.from(assignees);
-  }
+    const assignees = this.allTickets
+        .filter(t => t.assignee || t.assigneeName) // Check for either
+        .map(t => t.assignee?.displayName || t.assigneeName || 'Unknown'); // Use displayName or assigneeName
+    const uniqueAssignees = [...new Set(assignees)];
+    console.log('Unique Assignees in Method:', uniqueAssignees);
+    return uniqueAssignees;
+}
 
-  // Utility methods that can be used in the template
-  getUserInitials(displayName: string): string {
-    return this.jiraService.getUserInitials(displayName);
+  getUniqueStatuses(): string[] {
+    const statuses = this.allTickets
+      .filter(t => t.status)
+      .map(t => t.status);
+    const uniqueStatuses = [...new Set(statuses)];
+    console.log('Unique Statuses in Method:', uniqueStatuses);
+    return uniqueStatuses;
   }
 
   getUserAvatarColorClass(accountId: string): string {
-    return this.jiraService.getUserAvatarColorClass(accountId);
+    const colors = ['bg-primary', 'bg-success', 'bg-danger', 'bg-info'];
+    const hash = accountId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  }
+
+  getUserInitials(displayName: string): string {
+    const names = displayName.split(' ');
+    return names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
   }
 
   getPriorityBadgeClass(priority: string): string {
-    return this.jiraService.getPriorityBadgeClass(priority);
+    switch (priority.toLowerCase()) {
+      case 'high': return 'bg-danger';
+      case 'medium': return 'bg-warning';
+      case 'low': return 'bg-success';
+      default: return 'bg-secondary';
+    }
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedIssues();
+    }
+  }
+
+  getPagesArray(): number[] {
+    return Array(this.totalPages).fill(0).map((_, i) => i + 1);
+  }
+
+  getMaxEntries(): number {
+    return Math.min(this.currentPage * this.pageSize, this.filteredIssues.length);
   }
 }
