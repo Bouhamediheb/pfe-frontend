@@ -1,73 +1,49 @@
-// src/app/services/jira.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Issue } from '../models/issue.model';
-import { Hierarchy } from '../models/hierarchy.model';
-import { HttpHeaders } from '@angular/common/http';
+import { Tester } from '../models/Tester';
+import { TestSuite } from '../models/TestSuite';
+import { SyncResponse } from '../models/SyncResponse';
+import { Ticket } from '../models/Ticket';
+
+
+
+
+
+
 
 @Injectable({
   providedIn: 'root'
 })
 export class JiraService {
-  private apiUrl = 'http://localhost:8080/api/jira'; // Base URL to your Spring Boot backend API
+  private apiUrl = 'http://localhost:8080/api/jira';
 
   constructor(private http: HttpClient) { }
 
-  /**
-   * Get all JIRA issues from the backend
-   */
-  getAllIssues(): Observable<Issue[]> {
-    return this.http.get<Issue[]>(`${this.apiUrl}/issues`);
+  syncJiraData(): Observable<SyncResponse> {
+    return this.http.get<SyncResponse>(`${this.apiUrl}/sync`);
   }
 
-  /**
-   * Get hierarchy information for all issues
-   */
-  getHierarchy(): Observable<Hierarchy> {
-    return this.http.get<Hierarchy>(`${this.apiUrl}/hierarchy`);
+  getAllTickets(): Observable<Ticket[]> {
+    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets`);
   }
 
-  /**
-   * Returns the badge class based on priority name
-   */
-  getPriorityBadgeClass(priority: string): string {
-    switch (priority?.toLowerCase()) {
-      case 'high':
-        return 'bg-danger';
-      case 'medium':
-        return 'bg-warning';
-      case 'low':
-        return 'bg-success';
-      default:
-        return 'bg-secondary';
-    }
+  assignTesterToTicket(ticketKey: string, accountId: string): Observable<SyncResponse> {
+    const body = { accountId };
+    return this.http.post<SyncResponse>(`${this.apiUrl}/tickets/${ticketKey}/assign-tester`, body);
   }
 
-  /**
-   * Returns the initials for a user's display name
-   */
-  getUserInitials(displayName: string): string {
-    if (!displayName) return '';
-    
-    const names = displayName.split(' ');
-    if (names.length >= 2) {
-      return (names[0][0] + names[1][0]).toUpperCase();
-    }
-    return displayName.substring(0, 2).toUpperCase();
+  getTicketsByTester(testerAccountId: string): Observable<Ticket[]> {
+    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets/tester/${testerAccountId}`);
   }
 
-  /**
-   * Returns a random background color class for user avatars
-   * This maintains consistency for the same user by using the accountId
-   */
-  getUserAvatarColorClass(accountId: string): string {
-    const colors = ['bg-primary', 'bg-success', 'bg-danger', 'bg-info', 'bg-warning'];
-    
-    if (!accountId) return colors[0];
-    
-    // Simple hash function to get a consistent color for the same user
-    const hash = accountId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
+  changeTicketStatus(ticketKey: string, transitionId: string): Observable<SyncResponse> {
+    const body = { transitionId };
+    return this.http.post<SyncResponse>(`${this.apiUrl}/tickets/${ticketKey}/change-status`, body);
   }
+
+  getStatuses(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/statuses`);
+  }
+
 }
