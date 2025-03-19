@@ -46,4 +46,14 @@ export class JiraService {
     return this.http.get<string[]>(`${this.apiUrl}/statuses`);
   }
 
+  toggleFlag(ticketKey: string, currentStatusFlag: string | null, testerAccountId: string): Observable<any> {
+    const action = currentStatusFlag === 'BLOCKED' || currentStatusFlag === 'NEEDS_ASSISTANCE' ? 'unmark-status' : 'mark-status';
+    const url = `${this.apiUrl}/tickets/${ticketKey}/${action}`;
+    const body = {
+      testerAccountId,
+      ...(currentStatusFlag === null || currentStatusFlag === 'NORMAL' ? { statusFlag: 'BLOCKED' } : {})
+    };
+    return this.http.post(url, body);
+  }
+
 }
