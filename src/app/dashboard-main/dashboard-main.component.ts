@@ -5,7 +5,8 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { JiraService } from '../services/jira.service';
 import { Ticket } from '../models/Ticket';
 import { Tester } from '../models/Tester';
-import { map } from 'rxjs/operators'; // Add this for getStatuses
+import { map } from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-dashboard-main',
@@ -53,7 +54,7 @@ export class DashboardMainComponent implements OnInit {
         this.applyFilters();
         this.loading = false;
       },
-      error: (err) => {
+      error: (err: Error) => {
         console.error('Error loading tickets:', err);
         this.loading = false;
       }
@@ -63,7 +64,7 @@ export class DashboardMainComponent implements OnInit {
   loadStatuses(): void {
     this.jiraService.getStatuses().subscribe({
       next: (statuses) => this.statuses = statuses,
-      error: (err) => console.error('Error loading statuses:', err)
+      error: (err: Error) => console.error('Error loading statuses:', err)
     });
   }
 
@@ -71,7 +72,7 @@ export class DashboardMainComponent implements OnInit {
     this.totalIssues = this.allTickets.length;
     this.openIssues = this.allTickets.filter(t => t.status.toLowerCase() === 'open' || t.status.toLowerCase() === 'to do').length;
     this.resolvedIssues = this.allTickets.filter(t => t.status.toLowerCase() === 'resolved' || t.status.toLowerCase() === 'done').length;
-    this.avgResolutionTime = 'N/A'; // Enhance this if backend provides resolution time
+    this.avgResolutionTime = 'N/A';
   }
 
   applyFilters(): void {
@@ -160,13 +161,33 @@ export class DashboardMainComponent implements OnInit {
       return;
     }
 
-    this.jiraService.toggleFlag(ticketKey, currentStatusFlag, ticket.assignee.accountId).subscribe({
-      next: (response) => {
-        console.log('Flag toggled successfully:', response);
-        this.loadTickets(); // Reload to reflect the change
-      },
-      error: (err) => {
-        console.error('Error toggling flag:', err);
+    const action = currentStatusFlag === 'BLOCKED' || currentStatusFlag === 'NEEDS_ASSISTANCE' ? 'unflag' : 'flag';
+    const confirmMessage = action === 'flag'
+      ? `Are you sure you want to flag issue ${ticketKey} as ${currentStatusFlag === null ? 'BLOCKED' : currentStatusFlag}?`
+      : `Are you sure you want to unflag issue ${ticketKey}?`;
+
+    Swal.fire({
+      title: 'Confirm Action',
+      text: confirmMessage,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: action === 'flag' ? 'Yes, flag it!' : 'Yes, unflag it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.jiraService.toggleFlag(ticketKey, currentStatusFlag, ticket.assignee?.accountId || '').subscribe({
+          next: (response: any) => {
+            console.log('Flag toggled successfully:', response);
+            Swal.fire('Success!', `Issue ${ticketKey} has been ${action}ed.`, 'success');
+            this.loadTickets();
+          },
+          error: (err: Error) => {
+            console.error('Error toggling flag:', err);
+            Swal.fire('Error!', 'Failed to toggle flag. Please try again.', 'error');
+          }
+        });
       }
     });
   }
