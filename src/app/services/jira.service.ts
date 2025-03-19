@@ -25,7 +25,7 @@ export class JiraService {
   }
 
   getAllTickets(): Observable<Ticket[]> {
-    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets`);
+    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets-with-tester-details`);
   }
 
   assignTesterToTicket(ticketKey: string, accountId: string): Observable<SyncResponse> {
