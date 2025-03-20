@@ -191,4 +191,36 @@ export class DashboardMainComponent implements OnInit {
       }
     });
   }
+
+  submitFeedback(ticketKey: string): void {
+    Swal.fire({
+      title: 'Submit Feedback',
+      input: 'textarea',
+      inputLabel: `Feedback for ${ticketKey}`,
+      inputPlaceholder: 'Enter your feedback here...',
+      showCancelButton: true,
+      confirmButtonText: 'Submit',
+      cancelButtonText: 'Cancel',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'Feedback cannot be empty!';
+        }
+        return null;
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        this.jiraService.addCommentToTicket(ticketKey, result.value).subscribe({
+          next: (response: any) => {
+            console.log('Feedback submitted successfully:', response);
+            Swal.fire('Success!', 'Your feedback has been submitted to JIRA.', 'success');
+            this.loadTickets(); // Refresh tickets to reflect any updates
+          },
+          error: (err: Error) => {
+            console.error('Error submitting feedback:', err);
+            Swal.fire('Error!', 'Failed to submit feedback. Please try again.', 'error');
+          }
+        });
+      }
+    });
+  }
 }
