@@ -109,13 +109,13 @@
                                 <button class="btn btn-sm btn-outline-primary">
                                     <span class="material-icons-outlined fs-6">edit</span>
                                 </button>
-                                <button class="btn btn-sm btn-outline-success">
+                                <button class="btn btn-sm btn-outline-success"
+                                        (click)="submitFeedback(issue.key)">
                                     <span class="material-icons-outlined fs-6">add_comment</span>
                                 </button>
                                 <button class="btn btn-sm btn-outline-info">
                                     <span class="material-icons-outlined fs-6">visibility</span>
                                 </button>
-                                <!-- Flag Button -->
                                 <button class="btn btn-sm btn-outline-warning"
                                         (click)="toggleFlag(issue.key, issue.statusFlag)"
                                         [disabled]="!issue.assignee">

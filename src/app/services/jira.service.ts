@@ -56,4 +56,10 @@ export class JiraService {
     return this.http.post(url, body);
   }
 
+  addCommentToTicket(ticketKey: string, comment: string): Observable<any> {
+    const url = `${this.apiUrl}/tickets/${ticketKey}/comment`;
+    const body = { comment };
+    return this.http.post(url, body);
+  }
+
 }
