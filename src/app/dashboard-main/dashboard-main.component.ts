@@ -7,6 +7,8 @@ import { Ticket } from '../models/Ticket';
 import { Tester } from '../models/Tester';
 import { map } from 'rxjs/operators';
 import Swal from 'sweetalert2';
+import { WebSocketService } from '../services/web-socket-service.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-dashboard-main',
@@ -36,13 +38,43 @@ export class DashboardMainComponent implements OnInit {
   currentPage = 1;
   pageSize = 10;
   totalPages = 0;
+  messages: string[] = []; 
 
-  constructor(private jiraService: JiraService, private http: HttpClient) {}
+  constructor(private jiraService: JiraService, private http: HttpClient ,
+    private webSocketService: WebSocketService,
+    private notificationService: NotificationService
+  ) {}
 
   ngOnInit(): void {
     this.loadTickets();
     this.loadStatuses();
+    this.webSocketService.getMessages().subscribe((message: any) => {
+      this.handleNewMessage(message);
+    });
   }
+
+  // Method to handle new WebSocket messages
+  handleNewMessage(message: any): void {
+    // Check if the message is in a format you expect, like a string or object
+    if (typeof message === 'string') {
+      try {
+        message = JSON.parse(message); // If it's a string, try to parse it
+      } catch (error) {
+        console.error('Error parsing message:', error);
+        return;
+      }
+    }
+
+    // Show the popup when a new message comes through
+    Swal.fire({
+      title: 'New Message from Backend!',
+      text: message.message || 'You have a new update.',
+      icon: 'info', // or any other icon type you prefer
+      confirmButtonText: 'Okay'
+    });
+  }
+
+
 
   loadTickets(): void {
     this.loading = true;
@@ -53,13 +85,26 @@ export class DashboardMainComponent implements OnInit {
         this.calculateStats();
         this.applyFilters();
         this.loading = false;
+        
+        // Show success notification when tickets are loaded
+        this.notificationService.success('Tickets loaded successfully!', {
+          icon: 'bi bi-check2-circle',
+          rounded: true
+        });
       },
       error: (err: Error) => {
         console.error('Error loading tickets:', err);
         this.loading = false;
+        
+        // Show error notification in case of an issue
+        this.notificationService.error('Failed to load tickets. Please try again.', {
+          icon: 'bi bi-x-circle',
+          rounded: true
+        });
       }
     });
   }
+  
 
   loadStatuses(): void {
     this.jiraService.getStatuses().subscribe({

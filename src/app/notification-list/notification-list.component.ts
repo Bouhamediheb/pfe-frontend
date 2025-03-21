@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { WebSocketService } from '../services/web-socket-service.service';
 import { CommonModule } from '@angular/common';
-import PerfectScrollbar from 'perfect-scrollbar';
+//import PerfectScrollbar from 'perfect-scrollbar';
 
 @Component({
   selector: 'app-notification-list',
@@ -33,7 +33,7 @@ export class NotificationListComponent implements OnInit {
       setTimeout(() => {
         const container = document.querySelector('.message-container');
         if (container) {
-          new PerfectScrollbar(container);
+        //  new PerfectScrollbar(container);
         } else {
           console.error('PerfectScrollbar: Element non trouvé');
         }
