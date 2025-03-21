@@ -25,7 +25,7 @@ export class JiraService {
   }
 
   getAllTickets(): Observable<Ticket[]> {
-    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets`);
+    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets-with-tester-details`);
   }
 
   assignTesterToTicket(ticketKey: string, accountId: string): Observable<SyncResponse> {
@@ -44,6 +44,22 @@ export class JiraService {
 
   getStatuses(): Observable<string[]> {
     return this.http.get<string[]>(`${this.apiUrl}/statuses`);
+  }
+
+  toggleFlag(ticketKey: string, currentStatusFlag: string | null, testerAccountId: string): Observable<any> {
+    const action = currentStatusFlag === 'BLOCKED' || currentStatusFlag === 'NEEDS_ASSISTANCE' ? 'unmark-status' : 'mark-status';
+    const url = `${this.apiUrl}/tickets/${ticketKey}/${action}`;
+    const body = {
+      testerAccountId,
+      ...(currentStatusFlag === null || currentStatusFlag === 'NORMAL' ? { statusFlag: 'BLOCKED' } : {})
+    };
+    return this.http.post(url, body);
+  }
+
+  addCommentToTicket(ticketKey: string, comment: string): Observable<any> {
+    const url = `${this.apiUrl}/tickets/${ticketKey}/comment`;
+    const body = { comment };
+    return this.http.post(url, body);
   }
 
 }

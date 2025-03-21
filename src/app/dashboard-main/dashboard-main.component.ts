@@ -1,10 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { JiraService } from '../services/jira.service';
 import { Ticket } from '../models/Ticket';
 import { Tester } from '../models/Tester';
+import { map } from 'rxjs/operators';
+import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-dashboard-main',
@@ -35,7 +37,7 @@ export class DashboardMainComponent implements OnInit {
   pageSize = 10;
   totalPages = 0;
 
-  constructor(private jiraService: JiraService) {}
+  constructor(private jiraService: JiraService, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.loadTickets();
@@ -48,13 +50,11 @@ export class DashboardMainComponent implements OnInit {
       next: (tickets) => {
         this.allTickets = tickets;
         console.log('All Tickets:', this.allTickets);
-        console.log('Unique Statuses:', this.getUniqueStatuses());
-        console.log('Unique Assignees:', this.getUniqueAssignees());
         this.calculateStats();
         this.applyFilters();
         this.loading = false;
       },
-      error: (err) => {
+      error: (err: Error) => {
         console.error('Error loading tickets:', err);
         this.loading = false;
       }
@@ -63,10 +63,10 @@ export class DashboardMainComponent implements OnInit {
 
   loadStatuses(): void {
     this.jiraService.getStatuses().subscribe({
-        next: (statuses) => this.statuses = statuses,
-        error: (err) => console.error('Error loading statuses:', err)
+      next: (statuses) => this.statuses = statuses,
+      error: (err: Error) => console.error('Error loading statuses:', err)
     });
-}
+  }
 
   calculateStats(): void {
     this.totalIssues = this.allTickets.length;
@@ -79,27 +79,25 @@ export class DashboardMainComponent implements OnInit {
     let filtered = [...this.allTickets];
 
     if (this.startDate) {
-        filtered = filtered.filter(t => new Date(t.created) >= new Date(this.startDate));
+      filtered = filtered.filter(t => new Date(t.created) >= new Date(this.startDate));
     }
     if (this.endDate) {
-        filtered = filtered.filter(t => new Date(t.created) <= new Date(this.endDate));
+      filtered = filtered.filter(t => new Date(t.created) <= new Date(this.endDate));
     }
     if (this.selectedPriority) {
-        filtered = filtered.filter(t => t.priorityName?.toLowerCase() === this.selectedPriority.toLowerCase());
+      filtered = filtered.filter(t => t.priorityName?.toLowerCase() === this.selectedPriority.toLowerCase());
     }
     if (this.selectedAssignee) {
-        filtered = filtered.filter(t => 
-            (t.assignee?.displayName || t.assigneeName || '') === this.selectedAssignee
-        );
+      filtered = filtered.filter(t => t.assignee?.displayName === this.selectedAssignee);
     }
     if (this.selectedStatus) {
-        filtered = filtered.filter(t => t.status.toLowerCase() === this.selectedStatus.toLowerCase());
+      filtered = filtered.filter(t => t.status.toLowerCase() === this.selectedStatus.toLowerCase());
     }
 
     this.filteredIssues = filtered;
     this.totalPages = Math.ceil(this.filteredIssues.length / this.pageSize);
     this.updatePaginatedIssues();
-}
+  }
 
   updatePaginatedIssues(): void {
     const start = (this.currentPage - 1) * this.pageSize;
@@ -109,20 +107,16 @@ export class DashboardMainComponent implements OnInit {
 
   getUniqueAssignees(): string[] {
     const assignees = this.allTickets
-        .filter(t => t.assignee || t.assigneeName) // Check for either
-        .map(t => t.assignee?.displayName || t.assigneeName || 'Unknown'); // Use displayName or assigneeName
-    const uniqueAssignees = [...new Set(assignees)];
-    console.log('Unique Assignees in Method:', uniqueAssignees);
-    return uniqueAssignees;
-}
+      .filter(t => t.assignee)
+      .map(t => t.assignee?.displayName || 'Unknown');
+    return [...new Set(assignees)];
+  }
 
   getUniqueStatuses(): string[] {
     const statuses = this.allTickets
       .filter(t => t.status)
       .map(t => t.status);
-    const uniqueStatuses = [...new Set(statuses)];
-    console.log('Unique Statuses in Method:', uniqueStatuses);
-    return uniqueStatuses;
+    return [...new Set(statuses)];
   }
 
   getUserAvatarColorClass(accountId: string): string {
@@ -158,5 +152,75 @@ export class DashboardMainComponent implements OnInit {
 
   getMaxEntries(): number {
     return Math.min(this.currentPage * this.pageSize, this.filteredIssues.length);
+  }
+
+  toggleFlag(ticketKey: string, currentStatusFlag: string | null): void {
+    const ticket = this.allTickets.find(t => t.key === ticketKey);
+    if (!ticket || !ticket.assignee?.accountId) {
+      console.error('No assignee found for ticket:', ticketKey, 'Assignee:', ticket?.assignee);
+      return;
+    }
+
+    const action = currentStatusFlag === 'BLOCKED' || currentStatusFlag === 'NEEDS_ASSISTANCE' ? 'unflag' : 'flag';
+    const confirmMessage = action === 'flag'
+      ? `Are you sure you want to flag issue ${ticketKey} as ${currentStatusFlag === null ? 'BLOCKED' : currentStatusFlag}?`
+      : `Are you sure you want to unflag issue ${ticketKey}?`;
+
+    Swal.fire({
+      title: 'Confirm Action',
+      text: confirmMessage,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: action === 'flag' ? 'Yes, flag it!' : 'Yes, unflag it!',
+      cancelButtonText: 'Cancel'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        this.jiraService.toggleFlag(ticketKey, currentStatusFlag, ticket.assignee?.accountId || '').subscribe({
+          next: (response: any) => {
+            console.log('Flag toggled successfully:', response);
+            Swal.fire('Success!', `Issue ${ticketKey} has been ${action}ed.`, 'success');
+            this.loadTickets();
+          },
+          error: (err: Error) => {
+            console.error('Error toggling flag:', err);
+            Swal.fire('Error!', 'Failed to toggle flag. Please try again.', 'error');
+          }
+        });
+      }
+    });
+  }
+
+  submitFeedback(ticketKey: string): void {
+    Swal.fire({
+      title: 'Submit Feedback',
+      input: 'textarea',
+      inputLabel: `Feedback for ${ticketKey}`,
+      inputPlaceholder: 'Enter your feedback here...',
+      showCancelButton: true,
+      confirmButtonText: 'Submit',
+      cancelButtonText: 'Cancel',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'Feedback cannot be empty!';
+        }
+        return null;
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        this.jiraService.addCommentToTicket(ticketKey, result.value).subscribe({
+          next: (response: any) => {
+            console.log('Feedback submitted successfully:', response);
+            Swal.fire('Success!', 'Your feedback has been submitted to JIRA.', 'success');
+            this.loadTickets(); // Refresh tickets to reflect any updates
+          },
+          error: (err: Error) => {
+            console.error('Error submitting feedback:', err);
+            Swal.fire('Error!', 'Failed to submit feedback. Please try again.', 'error');
+          }
+        });
+      }
+    });
   }
 }
