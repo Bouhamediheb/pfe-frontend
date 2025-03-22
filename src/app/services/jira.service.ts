@@ -16,7 +16,7 @@ import { Ticket } from '../models/Ticket';
   providedIn: 'root'
 })
 export class JiraService {
-  private apiUrl = 'https://surrounding-berta-1mypfe1-b02f10dc.koyeb.app:8080/api/jira';
+  private apiUrl = 'https://surrounding-berta-1mypfe1-b02f10dc.koyeb.app/api/jira';
 
   constructor(private http: HttpClient) { }
 
