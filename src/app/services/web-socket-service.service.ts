@@ -9,7 +9,7 @@ export class WebSocketService {
   private socket$: WebSocketSubject<any>;
 
   constructor() {
-    this.socket$ = new WebSocketSubject('ws://localhost:8080/ws');
+    this.socket$ = new WebSocketSubject('ws://https://surrounding-berta-1mypfe1-b02f10dc.koyeb.app/ws');
 
     this.socket$.subscribe({
       next: (message) => {
