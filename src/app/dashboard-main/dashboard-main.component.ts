@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -24,6 +24,8 @@ export class DashboardMainComponent implements OnInit {
   avgResolutionTime = 'N/A';
 
   statuses: string[] = [];
+
+  testers: Tester[] = []; 
 
   startDate: string = '';
   endDate: string = '';
@@ -51,6 +53,7 @@ export class DashboardMainComponent implements OnInit {
     this.webSocketService.getMessages().subscribe((message: any) => {
       this.handleNewMessage(message);
     });
+    this.loadTesters();
   }
 
   // Method to handle new WebSocket messages
@@ -74,7 +77,16 @@ export class DashboardMainComponent implements OnInit {
     });
   }
 
-
+  // New method to load testers
+  loadTesters(): void {
+    this.jiraService.getTesters().subscribe({
+      next: (testers: Tester[]) => {
+        this.testers = testers;
+        console.log('Testers loaded:', this.testers);
+      },
+      error: (err: Error) => console.error('Error loading testers:', err)
+    });
+  }
 
   loadTickets(): void {
     this.loading = true;
@@ -265,6 +277,49 @@ export class DashboardMainComponent implements OnInit {
             Swal.fire('Error!', 'Failed to submit feedback. Please try again.', 'error');
           }
         });
+      }
+    });
+  }
+
+  // New method to assign a ticket to a tester
+  assignTicket(ticketKey: string): void {
+    Swal.fire({
+      title: `Assign Ticket ${ticketKey}`,
+      input: 'select',
+      inputOptions: this.testers.reduce((options: { [key: string]: string }, tester: Tester) => {
+        options[tester.accountId] = tester.displayName;
+        return options;
+      }, {}),
+      inputPlaceholder: 'Select a tester',
+      showCancelButton: true,
+      confirmButtonText: 'Assign',
+      cancelButtonText: 'Cancel',
+      inputValidator: (value) => {
+        if (!value) {
+          return 'Please select a tester!';
+        }
+        return null;
+      }
+    }).then((result) => {
+      if (result.isConfirmed && result.value) {
+        const selectedTester = this.testers.find((tester) => tester.accountId === result.value);
+        if (selectedTester) {
+          this.jiraService.assignTicket(ticketKey, selectedTester.accountId).subscribe({
+            next: (response: any) => {
+              console.log('Ticket assigned successfully:', response);
+              Swal.fire(
+                'Success!',
+                `Ticket ${ticketKey} has been assigned to ${selectedTester.displayName}.`,
+                'success'
+              );
+              this.loadTickets(); // Refresh tickets to reflect the assignment
+            },
+            error: (err: Error) => {
+              console.error('Error assigning ticket:', err);
+              Swal.fire('Error!', 'Failed to assign ticket. Please try again.', 'error');
+            }
+          });
+        }
       }
     });
   }

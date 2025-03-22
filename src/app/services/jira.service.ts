@@ -62,4 +62,14 @@ export class JiraService {
     return this.http.post(url, body);
   }
 
+  getTesters(): Observable<Tester[]> {
+    return this.http.get<Tester[]>(`${this.apiUrl}/testers`, );
+  }
+
+  assignTicket(ticketKey: string, testerAccountId: string): Observable<any> {
+    const url = `${this.apiUrl}/tickets/${ticketKey}/assign`;
+    const body = { testerAccountId };
+    return this.http.post(url, body, );
+  }
+
 }

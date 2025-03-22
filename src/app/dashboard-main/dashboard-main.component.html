@@ -84,7 +84,12 @@
                                 </div>
                                 <span>{{ issue.assignee.displayName }}</span>
                             </div>
-                            <span *ngIf="!issue.assignee">Unassigned</span>
+                            <div *ngIf="!issue.assignee" class="d-flex align-items-center gap-2">
+                                <span>Unassigned</span>
+                                <button class="btn btn-sm btn-outline-primary" (click)="assignTicket(issue.key)">
+                                    <span class="material-icons-outlined fs-6">person_add</span>
+                                </button>
+                            </div>
                         </td>
                         <td>{{ issue.created | date:'dd MMM yyyy' }}</td>
                         <td>
